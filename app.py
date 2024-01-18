@@ -14,6 +14,21 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
 
 
+@app.route('/api/products', methods=['GET'])
+def get_products():
+    products = Product.query.all()
+    products_list = []
+    for product in products:
+        pr_data = {
+            "id": product.id,
+            "name": product.name,
+            "price": product.price,
+        }
+        products_list.append(pr_data)
+
+    return jsonify(products_list)
+
+
 @app.route('/api/products/add', methods=["POST"])
 def add_product():
     data = request.json
@@ -25,7 +40,7 @@ def add_product():
 
         db.session.add(product)
         db.session.commit()
-        return jsonify({"message": "Product added successfully"})
+        return jsonify({"message": "Product added successfully"}), 201
     return jsonify({"message": "Invalid product data"}), 400
 
 
