@@ -1,10 +1,25 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+from flask_login import UserMixin, login_user, LoginManager, login_required, \
+    logout_user
+
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'test'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ecommerce.db'
 
+login_manager = LoginManager()
 db = SQLAlchemy(app)
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+CORS(app)
+
+
+class user(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
 
 class Product(db.Model):
@@ -12,6 +27,29 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=True)
     price = db.Column(db.Float, nullable=True)
     description = db.Column(db.Text, nullable=False)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return user.query.get(int(user_id))
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    userlog = user.query.filter_by(name=data.get("username")).first()
+
+    if userlog and data.get("password") == userlog.password:
+        login_user(userlog)
+        return jsonify({"message": "Login successful"})
+    return jsonify({"message": "Unauthorized. Invalid credentials"}), 401
+
+
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"message": "Logout successful"}), 200
 
 
 @app.route('/api/products', methods=['GET'])
@@ -30,6 +68,7 @@ def get_products():
 
 
 @app.route('/api/products/add', methods=["POST"])
+@login_required
 def add_product():
     data = request.json
     if 'name' in data and 'price' in data:
@@ -45,6 +84,7 @@ def add_product():
 
 
 @app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+@login_required
 def delete_product(product_id):
     product = Product.query.get(product_id)
     if product:
@@ -68,6 +108,7 @@ def get_product_details(product_id):
 
 
 @app.route('/api/products/update/<int:product_id>', methods=['PUT'])
+@login_required
 def updateProduct(product_id):
     product = Product.query.get(product_id)
     if not product:
