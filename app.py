@@ -14,11 +14,6 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
-
-
 @app.route('/api/products/add', methods=["POST"])
 def add_product():
     data = request.json
@@ -32,6 +27,16 @@ def add_product():
         db.session.commit()
         return jsonify({"message": "Product added successfully"})
     return jsonify({"message": "Invalid product data"}), 400
+
+
+@app.route('/api/products/delete/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    product = Product.query.get(product_id)
+    if product:
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({"message": "Product deleted successfully"})
+    return jsonify({"message": "Invalid product id"}), 404
 
 
 if __name__ == '__main__':
