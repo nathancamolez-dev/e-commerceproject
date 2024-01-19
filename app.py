@@ -20,6 +20,7 @@ class user(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    cart = db.relationship('CartItem', backref='user', lazy=True)
 
 
 class Product(db.Model):
@@ -27,6 +28,14 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=True)
     price = db.Column(db.Float, nullable=True)
     description = db.Column(db.Text, nullable=False)
+
+
+class CartItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer,
+                        db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer,
+                           db.ForeignKey('product.id'), nullable=False)
 
 
 @login_manager.user_loader
